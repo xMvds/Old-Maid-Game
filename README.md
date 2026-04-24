@@ -56,3 +56,12 @@ Open daarna:
 
 Belangrijk: de server luistert op `process.env.PORT` (Render zet dit automatisch).
 
+
+
+## Deploy (Render)
+
+- Build Command: `npm ci`
+- Start Command: `npm start`
+- Open: `/room.html` (player) and `/host` (dev)
+
+This project pins Node to LTS via `engines` and `.node-version`.
