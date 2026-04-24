@@ -1,4 +1,4 @@
-# Old Maid V1.9
+# Old Maid V2.0
 
 Single-table (1 lobby) multiplayer prototype.
 
@@ -41,4 +41,18 @@ Tip: op het player scherm kun je het debug-paneel openen door **D** 3× snel te 
 ## Opmerking (start handen)
 - Start-deal discards (setjes) worden **niet** automatisch direct bij het starten weggegooid, zodat iedereen met een **gelijke** start-hand begint.
 - Setjes worden weggedaan na acties (zoals trekken / herverdelen).
+## Deploy (Render)
+Maak een **New Web Service** (geen Static Site).
+
+Vul deze waarden in:
+- **Language:** Node
+- **Build Command:** `npm ci`
+- **Start Command:** `npm start`
+- **Root Directory:** leeg (tenzij je `package.json` in een submap hebt)
+
+Open daarna:
+- Player: `/room.html`
+- Host/dev: `/host`
+
+Belangrijk: de server luistert op `process.env.PORT` (Render zet dit automatisch).
 

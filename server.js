@@ -1102,5 +1102,5 @@ io.on("connection", (socket) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Old Maid V1.1 (single table) running on http://localhost:${PORT}`);
+  console.log(`Old Maid V2.0 running — listening on port ${PORT}`);
 });
