@@ -1,0 +1,1033 @@
+:root{
+  --bg:#0b0d12;
+  --panel:rgba(0,0,0,0.22);
+  --border:rgba(255,255,255,0.08);
+  --text:rgba(255,255,255,0.92);
+  --muted:rgba(255,255,255,0.55);
+  --good:rgba(120,255,170,0.92);
+  --bad:rgba(255,70,70,0.95);
+  --warn:rgba(255,210,120,0.95);
+}
+
+/* Ensure the HTML [hidden] attribute always hides elements (some styles may override UA defaults). */
+[hidden]{
+  display: none !important;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+html{
+  overflow-y: scroll;
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+body{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  background: transparent;
+  color: var(--text);
+  position: relative;
+  z-index: 0;
+  overflow-x: hidden;
+}
+
+/* Background glow layer (fixed, oversized) */
+body::before{
+  content:"";
+  position: fixed;
+  inset: -60vmax;
+  pointer-events:none;
+  z-index:-1;
+  background:
+    radial-gradient(1700px 1150px at 50% 18%, rgba(255,255,255,0.070) 0%, rgba(255,255,255,0.032) 38%, rgba(255,255,255,0.010) 68%, rgba(0,0,0,0) 92%),
+    radial-gradient(1200px 900px at 15% 78%, rgba(255,255,255,0.040) 0%, rgba(0,0,0,0) 70%),
+    radial-gradient(1200px 900px at 85% 78%, rgba(255,255,255,0.040) 0%, rgba(0,0,0,0) 70%);
+}
+
+/* Vignette + tiny grain */
+body::after{
+  content:"";
+  position: fixed;
+  inset: 0;
+  pointer-events:none;
+  z-index:-1;
+  background:
+    /* Smooth vignette (avoid a visible "cut line" around ~70%) */
+    linear-gradient(to bottom,
+      rgba(11,13,18,0) 0%,
+      rgba(11,13,18,0) 55%,
+      rgba(11,13,18,0.22) 78%,
+      rgba(11,13,18,0.65) 100%
+    ),
+    url("noise_fine.png");
+  background-size: 100% 100%, 380px 380px;
+  background-repeat: no-repeat, repeat;
+  opacity: 0.35;
+}
+
+a{color:inherit}
+.hidden{display:none !important}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+
+/* Background particles (FinisherHeader) */
+.playerBgC{
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: var(--bg);
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -2;
+}
+.playerBgC canvas{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+}
+
+/* ===== App shell (Lobby) ===== */
+.wrap{
+  min-height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  position:relative;
+  z-index:1;
+}
+
+/* Main UI card (same naming as Theater Balance Scale) */
+.card{
+  width:min(760px, 100%);
+  border:1px solid var(--border);
+  background:
+    radial-gradient(900px 520px at 50% 0%, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 42%, rgba(0,0,0,0) 88%),
+    var(--panel);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.05),
+    inset 0 0 50px rgba(0,0,0,0.35);
+}
+
+.top{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  padding:16px 16px 10px;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.title{
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  font-size:14px;
+  color:rgba(255,255,255,0.85);
+}
+.subtitle{
+  margin-top:6px;
+  font-size:12px;
+  color:rgba(255,255,255,0.45);
+}
+
+.centerCol{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:16px;
+  padding:16px;
+}
+
+.row{display:flex; gap:10px; align-items:center; width:100%}
+
+.joinBox{
+  width:min(520px, 100%);
+  display:grid;
+  gap:10px;
+  padding:16px;
+  border:1px solid rgba(255,255,255,0.06);
+  background: var(--panel);
+}
+.joinHint{
+  font-size:12px;
+  color: rgba(255,255,255,0.45);
+  letter-spacing:0.02em;
+}
+
+.input{
+  width:100%;
+  padding:12px 12px;
+  font-size:14px;
+  border:1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.35);
+  color: var(--text);
+  outline:none;
+}
+.input:focus{ border-color: rgba(255,255,255,0.25); }
+.input.upper{text-transform:uppercase; letter-spacing:0.12em}
+
+/* ===== Buttons ===== */
+.btn{
+  padding:10px 12px;
+  border:1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.25);
+  color: rgba(255,255,255,0.85);
+  cursor:pointer;
+}
+.btn.primary{
+  border-color: rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.08);
+}
+.btn:disabled{ opacity:0.45; cursor:not-allowed; }
+
+.btn.small{
+  padding:7px 10px;
+  font-size:12px;
+  border-radius:10px;
+}
+.btn.active{
+  border-color: rgba(255,255,255,0.22);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.72);
+}
+
+.btn.danger{
+  border-color: rgba(255,70,70,0.45);
+  background: rgba(255,70,70,0.10);
+  color: rgba(255,235,235,0.92);
+}
+
+.err{color: rgba(255,160,170,0.92); margin:0}
+
+.badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:7px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.18);
+  font-size:13px;
+}
+.badge.small{padding:5px 9px; font-size:12px}
+
+.check{display:flex; gap:10px; align-items:center; cursor:pointer}
+.check input{width:18px; height:18px; accent-color: rgba(255,255,255,0.85)}
+
+.num{
+  width:64px;
+  padding:8px 10px;
+  border:1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.35);
+  color: var(--text);
+  outline:none;
+}
+
+/* ===== Room layout ===== */
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:10px 12px;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+  background: var(--panel);
+  position:sticky;
+  top:0;
+  z-index:20;
+}
+.top-left,.top-right{display:flex; gap:10px; align-items:center}
+
+.layout{
+  display:grid;
+  grid-template-columns: 1fr 360px;
+  height: calc(100vh - 54px);
+  position: relative;
+  z-index: 1;
+}
+
+.table-wrap{ position:relative; overflow:visible; padding:10px; }
+
+/* 3D table */
+.table-3d{
+  position:relative;
+  width:min(1120px, 98vw);
+  height:min(560px, 58vh);
+  margin: 50px auto 0 auto;
+  perspective: 900px;
+}
+
+/* Smooth transitions to avoid "knips" when state changes */
+.table-3d{ transition: filter .35s ease; }
+.table-surface{
+  position:absolute;
+  inset:0;
+  border-radius:50%;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255,255,255,0.06) 0%, rgba(0,0,0,0.40) 52%, rgba(0,0,0,0.64) 100%);
+  border:1px solid rgba(255,255,255,0.08);
+  transform: rotateX(52deg);
+  box-shadow: 0 40px 120px rgba(0,0,0,0.65);
+}
+
+/* FX overlay */
+.fx-layer{ position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+
+/* Opponents arc: all other players are shown opposite you (top side of table) */
+.opponentsRow{
+  position:absolute;
+  inset:0;
+  z-index:8;
+  pointer-events:none;
+}
+.opponentsRow .seat{
+  position:absolute;
+  pointer-events:auto;
+}
+
+.pile{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform: translate(-50%,-50%);
+  text-align:center;
+  width:150px;
+  padding:10px;
+  border:1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.22);
+}
+.pile-title{font-weight:650; letter-spacing:0.12em; text-transform:uppercase; font-size:12px; color: rgba(255,255,255,0.62)}
+.pile-count{font-size:34px; font-weight:800; margin-top:2px; text-shadow: 0 0 18px rgba(255,255,255,0.10)}
+
+.pile-stack{display:flex; justify-content:center; gap:0; margin:6px 0 6px 0;}
+.mini-card{
+  width:22px;
+  height:30px;
+  border:1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.30);
+  margin-left:-10px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.45);
+}
+
+.seat{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:176px;
+  transform-origin: center center;
+  translate: -50% -50%;
+  text-align:center;
+  padding:10px 10px 9px;
+  border:1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.22);
+  transition: border-color .45s ease, box-shadow .45s ease, background .45s ease, opacity .45s ease, filter .45s ease;
+}
+
+/* Invisible anchor so FX can "fly" to your position even if your seat card isn't shown */
+.seat.seatAnchor{
+  position:absolute;
+  left:50%;
+  top:78%;
+  width:4px;
+  height:4px;
+  padding:0;
+  border:0;
+  background: transparent;
+  box-shadow:none;
+  opacity:0;
+  pointer-events:none;
+  translate: -50% -50%;
+}
+.seat-name{font-weight:700; overflow:hidden; white-space:nowrap; text-overflow:ellipsis}
+.seat-meta{display:flex; justify-content:center; gap:10px; margin-top:6px; align-items:center}
+.seat-icons{display:inline-flex; gap:6px}
+.seat.turn{
+  border-color: rgba(255,255,255,0.22);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.10), 0 0 30px rgba(255,255,255,0.10);
+}
+.seat.you{ border-color: rgba(120,255,170,0.28); }
+.seat.winner{
+  border-color: rgba(120,255,170,0.34);
+  box-shadow: 0 0 0 1px rgba(120,255,170,0.14), 0 0 40px rgba(120,255,170,0.12);
+}
+
+/* Target + turn glow changes should feel like fades */
+.seat.target,
+.seat.turn,
+.seat.winner{ transition: border-color .45s ease, box-shadow .45s ease; }
+
+.seat-stack{display:flex; justify-content:center; margin-top:8px;}
+.seat-stack .mini-card{width:18px;height:24px;margin-left:-8px}
+
+.controls{ width:min(680px, 92vw); margin: 10px auto 0 auto; }
+.turnline{
+  margin: 10px 0;
+  padding:10px 12px;
+  border:1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.22);
+}
+.control-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  align-items:center;
+  padding:10px;
+  border:1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.14);
+  margin-bottom:10px;
+}
+.seg{display:flex; gap:8px; align-items:center}
+
+.draw-panel,.defend-panel{
+  padding:12px;
+  border:1px dashed rgba(255,255,255,0.18);
+  background: rgba(0,0,0,0.14);
+  margin-bottom:10px;
+}
+.draw-title{font-weight:750; margin-bottom:10px}
+.draw-cards{display:flex; gap:10px; flex-wrap:wrap}
+
+.pick{
+  width:68px;
+  height:92px;
+  border:1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.28);
+  cursor:pointer;
+  padding:0;
+  display:grid;
+  place-items:center;
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  transform: translate(-50%,-50%) var(--fan, none);
+}
+.pick:hover{transform: translate(-50%,-50%) var(--fan, none) translateY(-2px);}
+.pick.hint{
+  transform: translate(-50%,-50%) var(--fan, none) translateY(-16px);
+  border-color: rgba(255,210,120,0.26);
+  box-shadow: 0 0 0 1px rgba(255,210,120,0.14), 0 0 26px rgba(255,210,120,0.12);
+}
+
+/* Fan layout for hidden pick cards */
+.draw-cards.fan{ position:relative; min-height:110px; padding: 8px 0 6px 0; }
+.draw-cards.fan .pick{ position:relative; }
+
+/* Stage uses absolute positioning (cards on the table). */
+.stageCards.draw-cards.fan{ padding: 0; min-height: 0; }
+
+.hand-wrap{
+  width:min(680px, 92vw);
+  margin: 8px auto 18px auto;
+  border:1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.18);
+  padding:12px;
+}
+.hand-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px}
+.hand{display:flex; gap:10px; overflow-x:auto; padding-bottom:8px; align-items:flex-end}
+
+/* Playing cards (renamed to avoid clashing with main UI .card) */
+.pCard{
+  width:68px;
+  height:92px;
+  border:1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.28);
+  flex: 0 0 auto;
+  display:grid;
+  place-items:center;
+}
+.card-face{
+  width:100%;
+  height:100%;
+  display:grid;
+  place-items:center;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255,255,255,0.10) 0%, rgba(0,0,0,0) 55%),
+    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.22));
+  font-weight:900;
+  letter-spacing:0.5px;
+  font-size:18px;
+}
+.card-face.red{color: rgba(255,160,170,0.95)}
+.card-face.joker{color: var(--warn); text-shadow: 0 0 18px rgba(255,210,120,0.10)}
+
+.card-back{
+  width:100%;
+  height:100%;
+  display:grid;
+  place-items:center;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255,255,255,0.10) 0%, rgba(0,0,0,0) 55%),
+    linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.42));
+  font-size:26px;
+  color: rgba(255,255,255,0.72);
+}
+
+/* Make your hand feel more "floating" */
+.pCard.float{ transform-origin: center 140px; transition: transform .18s ease; }
+.pCard.float:hover{ transform: translateY(-8px) rotate(var(--rot)); }
+.pCard.float.raised{ transform: translateY(-12px) rotate(var(--rot)); }
+
+/* Sidebar log */
+.log{
+  border-left:1px solid rgba(255,255,255,0.06);
+  background: var(--panel);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.log-head{display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-bottom:1px solid rgba(255,255,255,0.06)}
+.log-body{padding:10px 12px; overflow:auto; display:flex; flex-direction:column; gap:8px}
+.log-item{padding:10px 10px; border:1px solid rgba(255,255,255,0.08); background: rgba(0,0,0,0.18); font-size:13px}
+.log-foot{padding:10px 12px; border-top:1px solid rgba(255,255,255,0.06)}
+
+/* Responsive: hide sidebar log by default on small screens */
+@media (max-width: 980px){
+  .layout{grid-template-columns:1fr}
+  .log{
+    position:fixed;
+    right:-100%;
+    top:54px;
+    height:calc(100vh - 54px);
+    width:min(360px, 92vw);
+    z-index:50;
+    transition:right .2s ease;
+  }
+  .log.open{right:0}
+}
+
+@media (max-width: 520px){
+  .seat{width:150px}
+  .table-3d{height:min(500px, 60vh); margin-top: 74px;}
+}
+
+/* FX: flying hand + card */
+.fx-fly{
+  position:absolute;
+  transform: translate(-50%,-50%);
+  display:flex;
+  gap:8px;
+  align-items:center;
+  filter: drop-shadow(0 14px 22px rgba(0,0,0,.55));
+}
+.fx-hand{font-size:36px; transform: rotate(-12deg)}
+.fx-card{
+  width:48px;
+  height:66px;
+  border:1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.30);
+  display:grid;
+  place-items:center;
+  font-size:18px;
+  color: rgba(255,255,255,0.75);
+}
+.fx-card.joker{
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255,210,120,0.22) 0%, rgba(0,0,0,0) 55%),
+    linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.48));
+  color: rgba(255,240,200,0.92);
+}
+
+@keyframes zap{
+  0%{filter:none; box-shadow: 0 0 0 transparent}
+  20%{filter: brightness(1.35); box-shadow: 0 0 26px rgba(255,70,70,0.32)}
+  60%{filter: brightness(1.15); box-shadow: 0 0 18px rgba(255,70,70,0.22)}
+  100%{filter:none; box-shadow: 0 0 0 transparent}
+}
+/* Replace the old "zap" (flash) with a softer fade */
+@keyframes softZap{
+  0%{opacity:1; box-shadow: 0 0 0 rgba(255,70,70,0)}
+  40%{opacity:1; box-shadow: 0 0 30px rgba(255,70,70,0.12)}
+  100%{opacity:1; box-shadow: 0 0 0 rgba(255,70,70,0)}
+}
+.seat.zap{animation: softZap .95s ease}
+
+/* Toast */
+.toast{
+  position:fixed;
+  left:50%;
+  bottom:18px;
+  transform: translateX(-50%);
+  padding:12px 14px;
+  border:1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.35);
+  max-width:min(560px, 92vw);
+  text-align:center;
+  opacity:0;
+  pointer-events:none;
+  transition: opacity .18s ease, transform .18s ease;
+  z-index:80;
+}
+.toast.show{opacity:1; transform: translateX(-50%) translateY(-4px)}
+
+/* ===== V0.4 simplification: single screen + help/join overlays ===== */
+.hudbar{
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:10px 12px;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+  background: var(--panel);
+}
+.hud-left,.hud-right{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+
+.layout.single{ grid-template-columns: 1fr; height: auto; }
+
+.overlay{
+  position: fixed;
+  inset: 0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding: 18px;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(8px);
+  z-index: 60;
+}
+.overlay[hidden]{ display:none; }
+
+.modal{
+  width: min(760px, 100%);
+  max-height: min(92vh, 860px);
+  overflow: auto;
+  border-radius: 16px;
+}
+
+.tipCard{
+  width: min(520px, 100%);
+  padding: 14px;
+  border:1px solid rgba(255,255,255,0.06);
+  background: rgba(0,0,0,0.22);
+}
+.linkList{display:flex; flex-direction:column; gap:8px; width: min(520px, 100%);}
+.linkRow{display:flex; gap:10px; align-items:center;}
+.linkRow code{flex:1; padding:10px; border:1px solid rgba(255,255,255,0.10); background: rgba(0,0,0,0.35);}
+
+.helpBody{padding: 14px 16px 16px;}
+.helpBody ol{margin:0; padding-left: 18px; display:grid; gap:10px;}
+.helpBody code{padding:2px 6px; border:1px solid rgba(255,255,255,0.10); border-radius:8px; background: rgba(0,0,0,0.30);}
+
+/* Make room content scroll nicely on mobile */
+@media (max-width: 560px){
+  .hudbar{gap:8px}
+  .table-wrap{padding:8px}
+  .overlay{padding: 12px;}
+}
+
+
+/* --- Old Maid V0.6 additions --- */
+
+/* === Old Maid V0.8: cleaner player UI (no control bar) === */
+
+.turnline.floating{
+  position: fixed;
+  left: 50%;
+  top: 66px;
+  transform: translateX(-50%);
+  width: min(680px, 92vw);
+  z-index: 40;
+}
+
+@media (max-width: 560px){
+  .turnline.floating{ top: 72px; }
+}
+
+.floatingLeave{
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  z-index: 55;
+}
+
+.pickModal{ width: min(880px, 100%); }
+.pickBody{ padding: 12px 14px 14px; }
+.draw-cards.big{ justify-content:center; }
+.pickBody .pick{ width: 76px; height: 104px; }
+
+@media (max-width: 520px){
+  .pickBody .pick{ width: 66px; height: 92px; }
+}
+
+/* Pick: no background blur; cards are placed on the table surface. */
+body.picking .table-3d{ filter: none; }
+
+.pickTableLayer{
+  position:absolute;
+  inset: 0;
+  z-index: 22;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  pointer-events:none; /* only the cards capture clicks */
+}
+.pickTableLayer[hidden]{ display:none; }
+
+.pickTableLayer .pickStage{
+  width: min(980px, 96%);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap: 10px;
+  pointer-events:auto;
+}
+.pickStage{
+  width: min(980px, 98vw);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap: 10px;
+}
+.pickStageHead{ text-align:center; user-select:none; }
+.pickStageTitle{
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 14px;
+  color: rgba(255,255,255,0.84);
+}
+.pickStageSub{
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.64);
+}
+.stageCards{
+  position: relative;
+  width: min(860px, 92vw);
+  height: min(360px, 46vh);
+  display: block;
+  margin-top: 6px;
+}
+.stageCards .pick{ position:absolute; left:50%; top:50%; }
+
+@media (max-width: 520px){
+  .stageCards{ height: min(320px, 44vh); }
+}
+
+.seat.target{
+  border-color: rgba(255,210,120,0.38);
+  box-shadow: 0 0 0 1px rgba(255,210,120,0.14), 0 0 32px rgba(255,210,120,0.10);
+}
+
+/* Hand: bottom center, fanned */
+.hand-area{
+  position: fixed;
+  left: 50%;
+  /* Keep hand below the table, but not too low */
+  /* Move hand up further (same step as last adjustment) */
+  bottom: 78px;
+  transform: translateX(-50%);
+  width: min(820px, 96vw);
+  z-index: 54;
+  pointer-events: none;
+}
+
+.hand-meta{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:10px;
+  margin-bottom: 8px;
+  pointer-events: auto;
+}
+
+.hand-fan{
+  position: relative;
+  height: 240px;
+  pointer-events: auto;
+}
+
+.handCard{
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 146px;
+  height: 198px;
+  border:1px solid rgba(255,255,255,0.14);
+  background: #050608;
+  padding:0;
+  display:grid;
+  place-items:center;
+  cursor: default;
+  transform: translate(calc(-50% + var(--x, 0px)), var(--y, 0px)) rotate(var(--rot, 0deg));
+  transform-origin: center 200px;
+  box-shadow: 0 18px 55px rgba(0,0,0,0.55);
+  z-index: var(--z, 1);
+}
+
+/* Ghost card (when someone draws from you): lift + fade animation uses a cloned card */
+.ghostLost{
+  border: 1px solid rgba(255,255,255,0.14);
+  background: #050608;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 18px 70px rgba(0,0,0,0.65);
+  border-radius: 10px;
+}
+
+.handCard.nudgeable{ cursor: pointer; }
+
+.handCard.nudgeable{
+  border-color: rgba(255,255,255,0.16);
+  box-shadow: 0 18px 55px rgba(0,0,0,0.55), 0 0 22px rgba(255,255,255,0.06);
+  animation: nudgePulse 1.9s ease-in-out infinite;
+}
+@keyframes nudgePulse{
+  0%,100%{ filter: brightness(1); }
+  50%{ filter: brightness(1.08); }
+}
+
+.handCard.raised{
+  transform: translate(calc(-50% + var(--x, 0px)), calc(var(--y, 0px) - 18px)) rotate(var(--rot, 0deg));
+  border-color: rgba(255,255,255,0.20);
+  box-shadow: 0 18px 70px rgba(255,255,255,0.08), 0 22px 70px rgba(0,0,0,0.62);
+}
+
+@media (max-width: 520px){
+  .hand-area{ bottom: 70px; }
+  .hand-fan{ height: 200px; }
+  .handCard{ width: 112px; height: 154px; }
+  .turnline.floating{ width: min(620px, 92vw); }
+}
+
+.spectatorBanner{
+  position: fixed;
+  left: 50%;
+  top: 64px;
+  transform: translateX(-50%);
+  width: min(760px, 92vw);
+  padding: 10px 12px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.30);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  z-index: 60;
+  color: rgba(255,255,255,0.88);
+  font-weight: 650;
+}
+
+/* Card face: show value in the top-left (prevents text overlap in a fanned hand) */
+.card-face{
+  position: relative;
+  display: block;
+}
+.card-corner{
+  position:absolute;
+  left:10px;
+  top:8px;
+  font-weight: 950;
+  font-size: 18px;
+  letter-spacing: 0.3px;
+  line-height: 1;
+  text-shadow: 0 10px 22px rgba(0,0,0,0.65);
+}
+@media (max-width: 520px){
+  .card-corner{ left:8px; top:7px; font-size: 16px; }
+}
+
+/* Pick cards: show selected state + confirm on second click */
+.pick.selected{
+  border-color: rgba(120,255,170,0.36);
+  box-shadow: 0 0 0 1px rgba(120,255,170,0.18), 0 0 26px rgba(120,255,170,0.16);
+  animation: pickPulse 1.1s ease-in-out infinite;
+}
+@keyframes pickPulse{
+  0%,100%{ filter: brightness(1); }
+  50%{ filter: brightness(1.18); }
+}
+
+/* Defend hint banner removed (hand itself is the interaction for bluff/tell) */
+
+/* Seat: show actual card backs (not just 3 mini tiles) */
+.seat-cards{
+  position:relative;
+  height:38px;
+  margin-top:10px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+.seat-card{
+  width:22px;
+  height:30px;
+  border:1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.30);
+  display:grid;
+  place-items:center;
+  font-size:15px;
+  color: rgba(255,255,255,0.72);
+  margin-left:-10px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.45);
+  transform-origin: center 28px;
+}
+
+/* Seat tags for clarity */
+.seat-tag{
+  display:inline-block;
+  margin-top:0;
+  padding:3px 8px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.22);
+  font-size:10px;
+  font-weight:850;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color: rgba(255,255,255,0.72);
+  opacity: 0;
+  transform: translate(-50%,-4px);
+  transition: opacity .35s ease, transform .35s ease;
+}
+.seat-tag.show{ opacity: 1; transform: translate(0,0); }
+
+/* Seat tags: compact, on one line (no stacking) */
+.seat-tags{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:6px;
+  margin-top: 6px;
+  min-height: 18px;
+}
+.seat-tags .seat-tag{
+  position: relative;
+  left: auto;
+  top: auto;
+  transform: translate(0,-4px);
+}
+.seat-tag-turn{ border-color: rgba(255,255,255,0.22); color: rgba(255,255,255,0.82); }
+.seat-tag-target{ border-color: rgba(255,210,120,0.34); color: rgba(255,210,120,0.86); }
+
+@media (max-width: 520px){
+  .seat-tag{
+    font-size: 9px;
+    padding: 3px 7px;
+    letter-spacing: 0.10em;
+  }
+}
+.seat-more{
+  margin-left:8px;
+  padding:3px 6px;
+  border:1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.22);
+  border-radius:999px;
+  font-size:12px;
+  font-weight:750;
+  color: rgba(255,255,255,0.75);
+}
+
+/* Your hand: centered on the table, bigger */
+.hand-dock{
+  position:absolute;
+  left:50%;
+  top:60%;
+  transform: translate(-50%, 0);
+  width:min(760px, 94%);
+  border:1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.26);
+  padding:12px;
+  z-index:6;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 22px 60px rgba(0,0,0,0.55);
+}
+.hand.big{
+  justify-content:center;
+  gap:12px;
+  padding: 6px 6px 10px 6px;
+  overflow-x:auto;
+}
+.table-3d .hand.big .pCard{
+  width:92px;
+  height:124px;
+}
+.table-3d .hand.big .card-face{
+  font-size:22px;
+}
+.table-3d .hand.big .card-back{
+  font-size:32px;
+}
+
+@media (max-width: 520px){
+  .hand-dock{ top:63%; padding:10px; }
+  .table-3d .hand.big .pCard{ width:76px; height:104px; }
+}
+
+/* Debug panel (triple D) */
+.dbgPanel{
+  position:fixed;
+  left:14px;
+  bottom:14px;
+  width:min(360px, 92vw);
+  border:1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.34);
+  backdrop-filter: blur(10px);
+  padding:10px;
+  z-index:80;
+  opacity:0;
+  transform: translateY(10px);
+  pointer-events:none;
+  transition: opacity .16s ease, transform .16s ease;
+}
+
+/* Version tag (bottom-left) */
+.versionTag{
+  position: fixed;
+  left: 12px;
+  bottom: 10px;
+  z-index: 120;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: rgba(255,255,255,0.55);
+  user-select: none;
+  pointer-events: none;
+}
+.dbgPanel.show{
+  opacity:1;
+  transform: translateY(0);
+  pointer-events:auto;
+}
+.dbgRow{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
+.dbgTitle{ font-weight:850; letter-spacing:0.06em; text-transform:uppercase; font-size:12px; color: rgba(255,255,255,0.72);} 
+.dbgBtns{ display:flex; gap:10px; margin-top:10px; flex-wrap:wrap; }
+
+
+/* Host/dev page layout */
+.hostWrap{
+  width:min(1100px, 96vw);
+  margin: 14px auto 30px auto;
+  position: relative;
+  z-index: 1;
+}
+.hostGrid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.card.panel{
+  border:1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.18);
+}
+.hostBody{ padding: 14px; }
+.hostSep{ height:1px; background: rgba(255,255,255,0.06); margin: 12px 0; }
+.hostForm{ display:flex; flex-direction:column; gap:8px; }
+.hostLabel{ font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color: rgba(255,255,255,0.62); margin-top:6px; }
+.chk{ display:flex; gap:8px; align-items:center; font-size:13px; color: rgba(255,255,255,0.78); }
+.hostPlayers{ display:flex; flex-direction:column; gap:8px; }
+.hostPlayerRow{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:10px;
+  border:1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.18);
+}
+.hostPlayerName{ font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.hostPlayerMeta{ font-size:13px; color: rgba(255,255,255,0.72); }
+.hostLog{ display:flex; flex-direction:column; gap:6px; max-height: 320px; overflow:auto; }
+.hostLogItem{
+  padding:8px 10px;
+  border:1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.16);
+  font-size:13px;
+}
+
+@media (max-width: 980px){
+  .hostGrid{ grid-template-columns: 1fr; }
+}

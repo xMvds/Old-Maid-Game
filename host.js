@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Old Maid Host (dev) • V1.9</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body class="roomPage">
+  <!-- Background particles -->
+  <div id="playerBgC" class="playerBgC finisher-header" aria-hidden="true"></div>
+
+  <div class="hudbar">
+    <div class="hud-left">
+      <span class="badge" id="hTitle">Old Maid • Host (dev)</span>
+      <span class="badge" id="hConn">Verbinden…</span>
+      <span class="badge" id="hState">—</span>
+      <span class="badge" id="hPlayers">0/6</span>
+    </div>
+    <div class="hud-right">
+      <button class="btn small" id="hCopy">Copy</button>
+    </div>
+  </div>
+
+  <div class="versionTag">Old Maid V1.9</div>
+
+  <div class="hostWrap">
+    <div class="hostGrid">
+      <section class="card panel">
+        <div class="top">
+          <div>
+            <div class="title">Controls</div>
+            <div class="subtitle">Voor dev/test • telt niet als speler</div>
+          </div>
+        </div>
+
+        <div class="hostBody">
+          <div class="row" style="gap:10px; flex-wrap:wrap;">
+            <button class="btn primary" id="btnStart">Start spel</button>
+            <button class="btn" id="btnReset">Reset naar lobby</button>
+            <button class="btn" id="btnDevStep" title="Laat de huidige speler 1 random kaart pakken">Dev: random move</button>
+          </div>
+
+          <div class="row" style="gap:10px; flex-wrap:wrap; margin-top:10px;">
+            <button class="btn" id="btnDir">Richting: —</button>
+          </div>
+
+          <div class="hostSep"></div>
+
+          <div class="muted small" style="margin-bottom:6px;">Settings (alleen in lobby)</div>
+
+          <div class="hostForm">
+            <label class="hostLabel">Deal mode</label>
+            <select class="input" id="dealMode">
+              <option value="handSize">Iedereen N kaarten</option>
+              <option value="full">Vol deck (chaos)</option>
+            </select>
+
+            <label class="hostLabel">Start hand size (N)</label>
+            <input class="input" id="handSize" type="number" min="1" max="13" step="1" />
+
+            <div class="row" style="gap:10px; align-items:center;">
+              <label class="chk"><input type="checkbox" id="autoPickEnabled" /> Auto-pick AAN</label>
+            </div>
+
+            <label class="hostLabel">Auto-pick delay (sec)</label>
+            <input class="input" id="autoPick" type="number" min="3" max="60" step="1" />
+
+            <button class="btn small" id="btnApply" style="margin-top:10px;">Apply settings</button>
+            <div class="muted small" id="hErr" style="margin-top:8px;"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card panel">
+        <div class="top">
+          <div>
+            <div class="title">Live state</div>
+            <div class="subtitle">Publiek (geen handen)</div>
+          </div>
+        </div>
+
+        <div class="hostBody">
+          <div class="muted small" id="hMeta">—</div>
+
+          <div class="hostSep"></div>
+
+          <div class="hostPlayers" id="hPlayersList"></div>
+
+          <div class="hostSep"></div>
+
+          <div class="muted small" style="margin-bottom:6px;">Log</div>
+          <div class="hostLog" id="hLog"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" aria-live="polite"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/finisher-header.es5.min.js"></script>
+  <script src="/ui-bg.js"></script>
+  <script src="/host.js"></script>
+</body>
+</html>
