@@ -308,7 +308,7 @@ socket.on("connect", () => {
   joinOverlay.style.display = "flex";
   showJoinError("");
   showSpectatorBanner(false);
-  nameInput.value = "";
+  nameInput.value = localStorage.getItem("om_last_name") || "";
   focusNameInput();
 });
 
