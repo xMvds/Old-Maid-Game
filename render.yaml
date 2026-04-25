@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: old-maid-game
+    env: node
+    plan: free
+    buildCommand: bash render-build.sh
+    startCommand: npm start
+    autoDeploy: true
