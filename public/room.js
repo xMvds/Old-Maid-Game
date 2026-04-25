@@ -84,6 +84,7 @@ let selectedPickIndex = null;
 let lastPickCreatedAt = null;
 let lastPickAnimatedAt = null;
 let lastDrawFxKey = null;
+let persistentDrawFx = null;
 
 // --- UI helpers
 function toast(text, ms=1200){
@@ -850,15 +851,81 @@ function animateTurnArrow(fromSeat, toSeat){
   setTimeout(() => arrow.remove(), 1150);
 }
 
+function clearPersistentDrawFx(){
+  if(!persistentDrawFx) return;
+  persistentDrawFx.wrap?.remove();
+  persistentDrawFx = null;
+}
+
+function ensurePersistentDrawFx(){
+  if(persistentDrawFx?.wrap?.isConnected) return persistentDrawFx;
+  if(!fxLayer) return null;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'fx-turn-path';
+
+  const line = document.createElement('div');
+  line.className = 'fx-turn-path-line';
+
+  const arrow = document.createElement('div');
+  arrow.className = 'fx-turn-path-arrow';
+
+  wrap.appendChild(line);
+  wrap.appendChild(arrow);
+  fxLayer.appendChild(wrap);
+  persistentDrawFx = { wrap, line, arrow };
+  return persistentDrawFx;
+}
+
+function renderPersistentDrawFx(fromSeat, toSeat){
+  const table = $("table");
+  const fromEl = seatElement(fromSeat);
+  const toEl = seatElement(toSeat);
+  if(!table || !fromEl || !toEl){
+    clearPersistentDrawFx();
+    return;
+  }
+
+  const tr = table.getBoundingClientRect();
+  const fr = fromEl.getBoundingClientRect();
+  const rr = toEl.getBoundingClientRect();
+
+  const x1 = fr.left + fr.width / 2 - tr.left;
+  const y1 = fr.top + fr.height / 2 - tr.top;
+  const x2 = rr.left + rr.width / 2 - tr.left;
+  const y2 = rr.top + rr.height / 2 - tr.top;
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len = Math.hypot(dx, dy);
+  if(len < 10){
+    clearPersistentDrawFx();
+    return;
+  }
+
+  const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+  const fx = ensurePersistentDrawFx();
+  if(!fx) return;
+
+  fx.wrap.style.left = `${x1}px`;
+  fx.wrap.style.top = `${y1}px`;
+  fx.wrap.style.width = `${len}px`;
+  fx.wrap.style.transform = `rotate(${angle}deg)`;
+  fx.wrap.style.setProperty('--travel', `${len}px`);
+}
+
 function updateDrawFx(){
   const s = viewState();
   const pending = s?.pendingDraw;
   const active = pending?.activeSeat;
   const target = pending?.targetSeat;
   if(typeof active !== 'number' || typeof target !== 'number'){
+    clearPersistentDrawFx();
     lastDrawFxKey = null;
     return;
   }
+
+  // Keep a visible, moving indicator while a draw is pending.
+  renderPersistentDrawFx(target, active);
 
   const key = `${pending?.createdAt ?? 'na'}:${target}->${active}`;
   if(key === lastDrawFxKey) return;
