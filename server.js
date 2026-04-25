@@ -772,7 +772,7 @@ io.on("connection", (socket) => {
     const browserKey = String(payload?.browserKey || "").trim().slice(0, 120);
 
     // Reconnect flow
-    if(key){
+    if(key && room.started){
       const existing = room.players.find(p => p.reconnectKey === key);
       if(existing){
         existing.socketId = socket.id;
