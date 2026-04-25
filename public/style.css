@@ -412,6 +412,7 @@ a{color:inherit}
 
 /* Stage uses absolute positioning (cards on the table). */
 .stageCards.draw-cards.fan{ padding: 0; min-height: 0; }
+.stageCards.draw-cards.fan .pick{ position:absolute; }
 
 .hand-wrap{
   width:min(680px, 92vw);
