@@ -567,10 +567,16 @@ function pickTableTransform(i, n){
   const y = 16; // slight downshift so it visually sits "on" the table surface
   if(n <= 1) return `translate(0px, ${y}px) rotate(0deg)`;
 
-  // Dynamic spacing so large hands still fit on the table area.
-  // Clamp keeps the row readable (not too tight / not too wide).
-  const maxSpan = 760; // px across the stage
-  const spacing = Math.max(34, Math.min(84, maxSpan / Math.max(1, (n - 1))));
+  // Keep pick cards visually next to each other (minimal overlap).
+  // We prefer full side-by-side spacing, and only shrink when the stage is very narrow.
+  const cardW = 68;
+  const preferredGap = 10;
+  const preferredSpacing = cardW + preferredGap;
+
+  const stageW = drawCards?.clientWidth || 860;
+  const maxSpan = Math.max(220, stageW - cardW - 14);
+  const maxSpacingThatFits = maxSpan / Math.max(1, (n - 1));
+  const spacing = Math.max(44, Math.min(preferredSpacing, maxSpacingThatFits));
 
   const mid = (n - 1) / 2;
   const x = (i - mid) * spacing;
