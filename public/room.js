@@ -5,10 +5,10 @@ const APP_VERSION = "V2.0";
 function $(id){ return document.getElementById(id); }
 
 const roomId = "TABLE";
-const BROWSER_KEY_STORAGE = "om_browser_key";
+const TAB_KEY_STORAGE = "om_tab_key";
 
-function getBrowserKey(){
-  let k = localStorage.getItem(BROWSER_KEY_STORAGE) || "";
+function getTabKey(){
+  let k = sessionStorage.getItem(TAB_KEY_STORAGE) || "";
   if(k) return k;
   try{
     k = (crypto?.randomUUID?.() || "");
@@ -16,7 +16,7 @@ function getBrowserKey(){
   if(!k){
     k = `b_${Math.random().toString(36).slice(2)}_${Date.now().toString(36)}`;
   }
-  localStorage.setItem(BROWSER_KEY_STORAGE, k);
+  sessionStorage.setItem(TAB_KEY_STORAGE, k);
   return k;
 }
 
@@ -165,7 +165,7 @@ function join(reconnectKey){
     localStorage.setItem("om_name", name);
   }
 
-  socket.emit("joinTable", { name, reconnectKey, browserKey: getBrowserKey() }, (res) => {
+  socket.emit("joinTable", { name, reconnectKey, browserKey: getTabKey() }, (res) => {
     if(!res?.ok){
       if(reconnectKey){
         sessionStorage.removeItem(`om_reconnect_${roomId}`);
