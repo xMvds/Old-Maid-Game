@@ -276,18 +276,24 @@ a{color:inherit}
   position:absolute;
   height: 4px;
   transform-origin: left center;
-  background: linear-gradient(90deg, rgba(255,120,120,0.05), rgba(255,120,120,0.95));
-  box-shadow: 0 0 16px rgba(255,90,90,0.45);
+  background: linear-gradient(90deg, rgba(210,218,230,0.06), rgba(216,224,236,0.75));
+  box-shadow: 0 0 9px rgba(220,228,240,0.22);
   border-radius: 999px;
   z-index: 32;
 }
 .fx-turn-arrow{
   position:absolute;
-  width: 22px;
-  height: 22px;
-  border-radius: 999px;
-  background: radial-gradient(circle, rgba(255,120,120,0.98) 0%, rgba(255,90,90,0.72) 45%, rgba(255,90,90,0) 80%);
-  box-shadow: 0 0 24px rgba(255,90,90,0.65);
+  width: 12px;
+  height: 18px;
+  border-radius: 3px;
+  border:1px solid rgba(238,242,250,0.50);
+  background:
+    repeating-linear-gradient(135deg, rgba(204,212,224,0.25) 0 2px, rgba(113,123,140,0.25) 2px 4px),
+    linear-gradient(180deg, rgba(42,49,58,0.96), rgba(24,29,36,0.98));
+  box-shadow:
+    0 0 0 1px rgba(16,20,26,0.62) inset,
+    0 3px 8px rgba(0,0,0,0.45),
+    0 0 8px rgba(220,228,240,0.18);
   z-index: 33;
 }
 .fx-turn-path{
