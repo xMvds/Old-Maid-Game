@@ -1051,6 +1051,14 @@ function renderHand(){
 
   const n = hand.length;
   const mid = (n - 1) / 2;
+  const compact = window.matchMedia('(max-width: 520px)').matches;
+  const cardW = compact ? 112 : 146;
+  const handW = handEl.clientWidth || handEl.parentElement?.clientWidth || Math.floor(window.innerWidth * 0.92);
+  const maxSpacing = cardW + 8;
+  const minSpacing = 28;
+  const spacing = (n > 1)
+    ? Math.max(minSpacing, Math.min(maxSpacing, (handW - cardW) / (n - 1)))
+    : 0;
 
   const defend = lastState?.defend;
   const canNudge = !!(defend && !nudgeSent);
@@ -1063,9 +1071,9 @@ function renderHand(){
     btn.className = 'handCard';
     btn.type = 'button';
 
-    const x = (i - mid) * 70;
-    const rot = (i - mid) * 4.0;
-    const y = Math.abs(i - mid) * -1.2;
+    const x = (i - mid) * spacing;
+    const rot = 0;
+    const y = 0;
     btn.style.setProperty('--x', `${x}px`);
     btn.style.setProperty('--rot', `${rot}deg`);
     btn.style.setProperty('--y', `${y}px`);
