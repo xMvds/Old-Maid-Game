@@ -159,7 +159,8 @@ function nextDefaultPlayerName(room){
 
 
 function uniqueName(room, name){
-  const base = String(name || "").trim().slice(0, 18) || "Speler";
+  const normalized = String(name || "").trim().slice(0, 18);
+  const base = normalized || nextDefaultPlayerName(room);
   const used = new Set(room.players.map(p => String(p.name || "").toLowerCase()));
   const baseKey = base.toLowerCase();
   if(!used.has(baseKey)) return base;
