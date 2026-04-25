@@ -279,6 +279,7 @@ a{color:inherit}
   background: linear-gradient(90deg, rgba(210,218,230,0.06), rgba(216,224,236,0.75));
   box-shadow: 0 0 9px rgba(220,228,240,0.22);
   border-radius: 999px;
+  opacity: 0.9;
   z-index: 32;
 }
 .fx-turn-arrow{
