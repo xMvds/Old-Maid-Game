@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: old-maid-game
+    env: node
+    plan: free
+    buildCommand: bash render-build.sh
+    startCommand: node server.js
+    envVars:
+      - key: NODE_VERSION
+        value: "20"

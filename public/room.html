@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Old Maid V2.0</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body class="roomPage">
+  <!-- Background particles -->
+  <div id="playerBgC" class="playerBgC finisher-header" aria-hidden="true"></div>
+
+  <!-- Simple HUD -->
+  <div class="hudbar">
+    <div class="hud-left">
+      <span class="badge" id="gameBadge">Old Maid</span>
+      <span class="badge" id="connBadge">Verbinden…</span>
+      <span class="badge" id="stateBadge">Lobby</span>
+      <span class="badge" id="playersBadge">0/6</span>
+    </div>
+    <div class="hud-right">      <button class="btn small" id="helpBtn">?</button>
+    </div>
+  </div>
+
+  <div class="versionTag" id="versionTag">Old Maid V2.0</div>
+
+  <div class="spectatorBanner" id="spectatorBanner" hidden>
+    👀 Spel is al bezig — je kijkt mee (spectator). Wacht tot het spel voorbij is om mee te doen.
+  </div>
+
+  <div class="layout single">
+    <section class="table-wrap">
+      <div class="table-3d" id="table">
+        <div class="table-surface"></div>
+
+        <!-- FX layer (hands / cards) -->
+        <div class="fx-layer" id="fxLayer"></div>
+
+        <!-- Pick cards appear on the table during your turn (no blur / no modal). -->
+        <div class="pickTableLayer" id="pickOverlay" hidden>
+          <div class="pickStage" id="pickStage" role="dialog" aria-label="Kies een kaart">
+            <div class="pickStageHead">
+              <div class="pickStageTitle" id="pickTitle">Kies 1 kaart…</div>
+              <div class="pickStageSub" id="pickSub">—</div>
+            </div>
+            <div class="draw-cards fan big stageCards" id="drawCards"></div>
+          </div>
+        </div>
+
+        <!-- Opponents (all other players, opposite side of the table) -->
+        <div class="opponentsRow" id="opponentsRow"></div>
+
+        <!-- Seats injected by JS -->
+      </div>
+
+      <div class="turnline floating" id="turnLine">—</div>
+
+      <!-- Floating leave seat (bottom right) -->
+      <button class="btn danger floatingLeave" id="leaveBtn" title="Leave seat = GAME OVER">Leave seat</button>
+
+<div class="toast" id="toast" aria-live="polite"></div>
+    </section>
+  </div>
+
+  <!-- Your hand (fixed at the bottom of the screen) -->
+  <div class="hand-area" id="handArea">
+    <div class="hand-fan" id="hand"></div>
+  </div>
+
+  <!-- Join overlay (single screen) -->
+  <div class="overlay" id="joinOverlay" aria-hidden="false">
+    <div class="card modal">
+      <div class="top">
+        <div>
+          <div class="title">Old Maid</div>
+            <div class="subtitle">1 lobby • player screen • V2.0</div>
+        </div>
+      </div>
+
+      <div class="centerCol" style="padding-top:14px;">
+        <div class="joinBox">
+          <div class="joinHint">Vul je naam in en join direct</div>
+          <input id="name" class="input" placeholder="Jouw naam" maxlength="18" autocomplete="off" autofocus />
+          <div class="muted small">Emoji mag (🎭🔥🍀).</div>
+          <div class="muted small" style="margin-top:6px;">Test je met meerdere spelers op 1 pc? Open meerdere tabbladen — elk tabblad is een speler.</div>
+        </div>
+
+        <div class="row" style="max-width:520px;">
+          <button id="joinBtn" class="btn primary" style="flex:1;">Join tafel</button>
+        </div>
+
+        <p id="joinErr" class="err" hidden></p>
+
+        <div class="row" style="max-width:520px; justify-content:flex-end;">
+          <button class="btn small" id="openHelpFromJoin">Uitleg</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help overlay -->
+  <div class="overlay" id="helpOverlay" hidden>
+    <div class="card modal">
+      <div class="top">
+        <div>
+          <div class="title">Hoe speel je?</div>
+          <div class="subtitle">Old Maid • 1 lobby • host is alleen voor dev</div>
+        </div>
+      </div>
+
+      <div class="helpBody">
+        <ol>
+          <li><b>Start de server</b> op 1 laptop/pc: <code>npm install</code> → <code>npm start</code>.</li>
+          <li><b>Iedereen opent dezelfde link</b> naar de server (op mobiel geen <code>localhost</code>, maar het IP-adres van de host-pc).</li>
+          <li>Vul je naam in → <b>Join tafel</b>.</li>
+          <li>De host start het spel via <code>/host</code>.</li>
+          <li>Ben jij aan de beurt? Je krijgt automatisch het kaart-keuze scherm en kiest 1 kaart van je buur (verborgen backs).</li>
+          <li>Pakt iemand een kaart van jou? Tik 1 van je kaarten om die <b>omhoog</b> te zetten (bluff/tell).</li>
+        </ol>
+        <div class="muted small">
+          Als iemand op een ‘lege tafel’ belandt, zit die waarschijnlijk op een ander adres. Zorg dat iedereen exact hetzelfde adres gebruikt.
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:14px;">
+          <button class="btn primary" id="closeHelp">Sluit</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Debug panel (open: press D 3× quickly) -->
+  <div class="dbgPanel" id="dbgPanel" aria-hidden="true">
+    <div class="dbgRow">
+      <div class="dbgTitle">Debug</div>
+      <button class="btn small" id="dbgClose" title="Sluit">✕</button>
+    </div>
+    <div class="dbgBtns">
+      <button class="btn small" id="dbgCopy">Copy state</button>
+      <button class="btn small" id="dbgHost">Open host</button>
+    </div>
+    <div class="muted small" style="margin-top:8px;">Tip: op mobiel kun je ook 3× tikken op “Old Maid” linksboven.</div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/finisher-header.es5.min.js"></script>
+  <script src="/ui-bg.js"></script>
+  <script src="/room.js"></script>
+</body>
+</html>
