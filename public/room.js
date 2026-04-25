@@ -5,6 +5,20 @@ const APP_VERSION = "V2.0";
 function $(id){ return document.getElementById(id); }
 
 const roomId = "TABLE";
+const BROWSER_KEY_STORAGE = "om_browser_key";
+
+function getBrowserKey(){
+  let k = localStorage.getItem(BROWSER_KEY_STORAGE) || "";
+  if(k) return k;
+  try{
+    k = (crypto?.randomUUID?.() || "");
+  }catch(_){ k = ""; }
+  if(!k){
+    k = `b_${Math.random().toString(36).slice(2)}_${Date.now().toString(36)}`;
+  }
+  localStorage.setItem(BROWSER_KEY_STORAGE, k);
+  return k;
+}
 
 // If you duplicate a tab, some browsers copy sessionStorage.
 // We only auto-reconnect on real reloads; new tabs always join as a new player.
@@ -107,6 +121,33 @@ helpOverlay.addEventListener("click", (e) => {
   if(e.target === helpOverlay) closeHelp();
 });
 
+function bindHostLongPress(el){
+  if(!el) return;
+  let timer = null;
+  const clear = () => {
+    if(timer){
+      clearTimeout(timer);
+      timer = null;
+    }
+  };
+  el.addEventListener('pointerdown', (e) => {
+    // Mobile shortcut (touch/pen). Keep desktop D-key flow unchanged.
+    if(e.pointerType === 'mouse') return;
+    clear();
+    timer = setTimeout(() => {
+      timer = null;
+      window.open('/host', '_blank');
+      toast('Host geopend', 1000);
+    }, 700);
+  });
+  el.addEventListener('pointerup', clear);
+  el.addEventListener('pointercancel', clear);
+  el.addEventListener('pointerleave', clear);
+}
+
+bindHostLongPress($("joinTitle"));
+bindHostLongPress($("gameBadge"));
+
 // Keep the name field empty by default; blank = auto "Speler N" server-side.
 nameInput.value = "";
 
@@ -124,7 +165,7 @@ function join(reconnectKey){
     localStorage.setItem("om_name", name);
   }
 
-  socket.emit("joinTable", { name, reconnectKey }, (res) => {
+  socket.emit("joinTable", { name, reconnectKey, browserKey: getBrowserKey() }, (res) => {
     if(!res?.ok){
       if(reconnectKey){
         sessionStorage.removeItem(`om_reconnect_${roomId}`);
@@ -297,9 +338,10 @@ socket.on("publicState", (state) => {
     joinDecided = true;
 
     const key = sessionStorage.getItem(`om_reconnect_${roomId}`) || "";
-    const canReconnect = !!(state?.started) && (NAV_TYPE === "reload") && !!key;
-
-    if(!state?.started){
+    const canReconnect = !!key;
+    if(canReconnect){
+      join(key);
+    }else if(!state?.started){
       // Lobby: refresh behaves like logout (force name input again)
       sessionStorage.removeItem(`om_reconnect_${roomId}`);
       joinOverlay.style.display = "flex";
@@ -309,15 +351,11 @@ socket.on("publicState", (state) => {
       nameInput.value = "";
       focusNameInput();
     }else{
-      if(canReconnect){
-        join(key);
-      }else{
-        // Allow spectate (no seat) while the game is running.
-        joinOverlay.style.display = "flex";
-        showJoinError("Spel is al gestart. Je kunt wel meekijken (spectate). Vul evt. je naam in en klik Join.");
-        nameInput.value = "";
-        focusNameInput();
-      }
+      // Allow spectate (no seat) while the game is running.
+      joinOverlay.style.display = "flex";
+      showJoinError("Spel is al gestart. Je kunt wel meekijken (spectate). Vul evt. je naam in en klik Join.");
+      nameInput.value = "";
+      focusNameInput();
     }
   }
 

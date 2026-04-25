@@ -769,6 +769,7 @@ io.on("connection", (socket) => {
     const room = getOrCreateSingleRoom();
     const requestedName = normalizeName(payload?.name);
     const key = String(payload?.reconnectKey || "");
+    const browserKey = String(payload?.browserKey || "").trim().slice(0, 120);
 
     // Reconnect flow
     if(key){
@@ -785,6 +786,25 @@ io.on("connection", (socket) => {
         addLog(room, `🔌 ${existing.name} is weer verbonden.`);
         emitState(room);
         return cb?.({ ok: true, roomId: room.id, playerId: existing.id, reconnectKey: existing.reconnectKey, reconnected: true });
+      }
+    }
+
+    // Browser identity flow:
+    // one browser can occupy only one seat in this game (prevents rejoin with new username in same browser).
+    if(browserKey){
+      const sameBrowser = room.players.find(p => p.browserKey && p.browserKey === browserKey);
+      if(sameBrowser){
+        sameBrowser.socketId = socket.id;
+        sameBrowser.offline = false;
+        socket.join(room.id);
+
+        if(room.hostPlayerId === sameBrowser.id){
+          room.hostSocketId = socket.id;
+        }
+
+        addLog(room, `🔌 ${sameBrowser.name} is weer verbonden (browser).`);
+        emitState(room);
+        return cb?.({ ok: true, roomId: room.id, playerId: sameBrowser.id, reconnectKey: sameBrowser.reconnectKey, reconnected: true });
       }
     }
 
@@ -831,7 +851,8 @@ io.on("connection", (socket) => {
       seat,
       hand: [],
       eliminated: false,
-      offline: false
+      offline: false,
+      browserKey: browserKey || null
     };
     room.players.push(player);
     socket.join(room.id);

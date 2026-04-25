@@ -815,6 +815,43 @@ body.picking .table-3d{ filter: none; }
   .turnline.floating{ width: min(620px, 92vw); }
 }
 
+/* Phone accessibility tweaks (mobile only; desktop unaffected). */
+@media (max-width: 520px){
+  .hudbar{
+    padding: 10px 10px;
+    gap: 8px;
+  }
+  .hud-left{
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .badge{
+    padding: 7px 10px;
+    font-size: 14px;
+  }
+  .table-3d{
+    width: 100vw;
+    height: min(500px, 52vh);
+    margin-top: 42px;
+  }
+  .opponentsRow .seat{
+    width: 142px;
+    padding: 8px 8px 7px;
+  }
+  .seat-name{ font-size: 18px; }
+  .seat-cards{ margin-top: 8px; }
+  .turnline.floating{
+    top: 64px;
+    font-size: 16px;
+    padding: 10px 12px;
+  }
+  .floatingLeave{
+    right: 10px;
+    bottom: 10px;
+    padding: 10px 12px;
+  }
+}
+
 .spectatorBanner{
   position: fixed;
   left: 50%;
