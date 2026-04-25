@@ -276,19 +276,80 @@ a{color:inherit}
   position:absolute;
   height: 4px;
   transform-origin: left center;
-  background: linear-gradient(90deg, rgba(255,120,120,0.05), rgba(255,120,120,0.95));
-  box-shadow: 0 0 16px rgba(255,90,90,0.45);
+  background: linear-gradient(90deg, rgba(214,220,229,0.08), rgba(224,230,238,0.68));
+  box-shadow: 0 0 7px rgba(218,226,236,0.18);
   border-radius: 999px;
+  opacity: 0.9;
   z-index: 32;
 }
 .fx-turn-arrow{
   position:absolute;
-  width: 22px;
-  height: 22px;
-  border-radius: 999px;
-  background: radial-gradient(circle, rgba(255,120,120,0.98) 0%, rgba(255,90,90,0.72) 45%, rgba(255,90,90,0) 80%);
-  box-shadow: 0 0 24px rgba(255,90,90,0.65);
+  width: 14px;
+  height: 20px;
+  border-radius: 2px;
+  border:1px solid rgba(236,241,248,0.52);
+  background:
+    linear-gradient(90deg, transparent 0 36%, rgba(204,212,225,0.18) 36% 64%, transparent 64% 100%),
+    repeating-linear-gradient(135deg, rgba(186,196,210,0.22) 0 2px, rgba(101,111,128,0.20) 2px 4px),
+    linear-gradient(180deg, rgba(44,51,61,0.97), rgba(24,29,36,0.98));
+  box-shadow:
+    0 0 0 1px rgba(15,19,25,0.64) inset,
+    0 3px 7px rgba(0,0,0,0.42),
+    0 0 6px rgba(214,223,236,0.16);
   z-index: 33;
+}
+.fx-turn-path{
+  position:absolute;
+  height:0;
+  transform-origin:left center;
+  z-index:34;
+  pointer-events:none;
+}
+.fx-turn-path-line{
+  position:absolute;
+  left:0;
+  top:0;
+  width:100%;
+  height:3px;
+  border-radius:999px;
+  background: linear-gradient(90deg, rgba(225,230,238,0.14), rgba(215,220,228,0.70));
+  box-shadow: 0 0 8px rgba(235,240,248,0.18);
+  opacity:0.82;
+}
+.fx-turn-path-arrow{
+  position:absolute;
+  left:0;
+  top:0;
+  width:14px;
+  height:20px;
+  transform: translate(-50%, -50%) perspective(120px) rotateY(-4deg);
+  border-radius:3px;
+  border:1px solid rgba(235,240,248,0.42);
+  background:
+    linear-gradient(90deg, transparent 0 38%, rgba(206,214,226,0.20) 38% 62%, transparent 62% 100%),
+    repeating-linear-gradient(135deg, rgba(210,216,226,0.22) 0 2px, rgba(120,130,145,0.20) 2px 4px),
+    linear-gradient(180deg, rgba(44,50,60,0.95), rgba(27,31,38,0.96));
+  box-shadow:
+    0 0 0 1px rgba(18,22,28,0.60) inset,
+    0 3px 8px rgba(0,0,0,0.50),
+    0 0 8px rgba(225,232,244,0.22);
+  animation: drawArrowTravel 1100ms linear infinite;
+}
+@keyframes drawArrowTravel{
+  0%{
+    transform: translate(-50%, -50%) scale(0.85);
+    opacity: 0.12;
+  }
+  14%{
+    opacity: 1;
+  }
+  86%{
+    opacity: 1;
+  }
+  100%{
+    transform: translate(calc(var(--travel, 140px) - 50%), -50%) scale(1.03);
+    opacity: 0;
+  }
 }
 
 /* Opponents arc: all other players are shown opposite you (top side of table) */
@@ -360,13 +421,21 @@ a{color:inherit}
 .seat-meta{display:flex; justify-content:center; gap:10px; margin-top:6px; align-items:center}
 .seat-icons{display:inline-flex; gap:6px}
 .seat.draw-active{
-  border-color: rgba(255,255,255,0.48);
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.18), 0 0 26px rgba(255,255,255,0.20);
-  animation: activeSeatPulse 1200ms ease-in-out infinite;
+  border-color: rgba(245,248,255,0.40);
+  box-shadow:
+    0 0 0 1px rgba(245,248,255,0.18),
+    0 0 10px rgba(228,234,245,0.14),
+    0 0 18px rgba(205,214,230,0.07);
+  animation: activeSeatPulse 1400ms ease-in-out infinite;
 }
-.seat.draw-active{
-  border-color: rgba(255,120,120,0.62);
-  box-shadow: 0 0 0 1px rgba(255,120,120,0.26), 0 0 34px rgba(255,90,90,0.30);
+.seat.draw-active::after{
+  content:"";
+  position:absolute;
+  inset:-8px;
+  border:1px solid rgba(242,246,255,0.28);
+  box-shadow: 0 0 8px rgba(225,232,245,0.13);
+  pointer-events:none;
+  animation: activeSeatGlow 1400ms ease-in-out infinite;
 }
 .seat.you{ border-color: rgba(120,255,170,0.28); }
 .seat.winner{
@@ -377,13 +446,23 @@ a{color:inherit}
 .seat.winner{ transition: border-color .45s ease, box-shadow .45s ease; }
 @keyframes activeSeatPulse{
   0%, 100%{
-    box-shadow: 0 0 0 1px rgba(255,255,255,0.16), 0 0 16px rgba(255,255,255,0.14);
-    border-color: rgba(255,255,255,0.34);
+    box-shadow:
+      0 0 0 1px rgba(240,245,255,0.24),
+      0 0 8px rgba(225,232,245,0.12),
+      0 0 14px rgba(210,220,236,0.06);
+    border-color: rgba(238,243,255,0.36);
   }
   50%{
-    box-shadow: 0 0 0 1px rgba(255,255,255,0.24), 0 0 34px rgba(255,255,255,0.28);
-    border-color: rgba(255,255,255,0.58);
+    box-shadow:
+      0 0 0 1px rgba(244,248,255,0.26),
+      0 0 12px rgba(232,238,248,0.18),
+      0 0 20px rgba(214,224,240,0.08);
+    border-color: rgba(250,252,255,0.52);
   }
+}
+@keyframes activeSeatGlow{
+  0%,100%{ opacity:0.22; transform: scale(0.994); }
+  50%{ opacity:0.42; transform: scale(1.003); }
 }
 
 .seat-stack{display:flex; justify-content:center; margin-top:8px;}
