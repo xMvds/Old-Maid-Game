@@ -69,7 +69,7 @@ let raisedIndex = null;
 let selectedPickIndex = null;
 let lastPickCreatedAt = null;
 let lastPickAnimatedAt = null;
-let drawLinkFx = null;
+let lastDrawFxKey = null;
 
 // --- UI helpers
 function toast(text, ms=1200){
@@ -727,7 +727,8 @@ function renderSeats(){
     }
 
     // Classes (smooth transitions in CSS)
-    seatEl.classList.remove('turn', 'target');
+    seatEl.classList.toggle('turn', isGame && seat === activeSeat);
+    seatEl.classList.toggle('target', isGame && seat === targetSeat);
     seatEl.classList.toggle('draw-active', isGame && seat === activeSeat);
     seatEl.classList.toggle('you', mode === 'player' && you?.seat === seat);
     seatEl.classList.toggle('winner', s?.winnerSeat === seat);
@@ -758,33 +759,17 @@ function renderSeats(){
   }
 }
 
-function clearDrawLinkFx(){
-  if(!drawLinkFx) return;
-  drawLinkFx.remove();
-  drawLinkFx = null;
-}
-
-function updateDrawLinkFx(){
-  const s = viewState();
-  const pending = s?.pendingDraw;
-  const active = pending?.activeSeat;
-  const target = pending?.targetSeat;
-  if(typeof active !== 'number' || typeof target !== 'number'){
-    clearDrawLinkFx();
-    return;
-  }
+function animateTurnArrow(fromSeat, toSeat){
   if(!fxLayer) return;
-  const fromEl = seatElement(active);
-  const toEl = seatElement(target);
+  const fromEl = seatElement(fromSeat);
+  const toEl = seatElement(toSeat);
   const table = $("table");
-  if(!fromEl || !toEl || !table){
-    clearDrawLinkFx();
-    return;
-  }
+  if(!fromEl || !toEl || !table) return;
 
   const tr = table.getBoundingClientRect();
   const fr = fromEl.getBoundingClientRect();
   const rr = toEl.getBoundingClientRect();
+
   const x1 = fr.left + fr.width / 2 - tr.left;
   const y1 = fr.top + fr.height / 2 - tr.top;
   const x2 = rr.left + rr.width / 2 - tr.left;
@@ -792,23 +777,58 @@ function updateDrawLinkFx(){
   const dx = x2 - x1;
   const dy = y2 - y1;
   const len = Math.hypot(dx, dy);
-  if(len < 14){
-    clearDrawLinkFx();
-    return;
-  }
+  if(len < 10) return;
   const angle = Math.atan2(dy, dx) * 180 / Math.PI;
 
-  if(!drawLinkFx){
-    drawLinkFx = document.createElement('div');
-    drawLinkFx.className = 'fx-draw-link';
-    drawLinkFx.innerHTML = '<div class="fx-draw-line"></div><div class="fx-draw-arrow"></div>';
-    fxLayer.appendChild(drawLinkFx);
+  const trail = document.createElement('div');
+  trail.className = 'fx-turn-trail';
+  trail.style.left = `${x1}px`;
+  trail.style.top = `${y1}px`;
+  trail.style.width = `${len}px`;
+  trail.style.transform = `rotate(${angle}deg)`;
+  fxLayer.appendChild(trail);
+
+  const arrow = document.createElement('div');
+  arrow.className = 'fx-turn-arrow';
+  arrow.style.left = `${x1}px`;
+  arrow.style.top = `${y1}px`;
+  fxLayer.appendChild(arrow);
+
+  trail.animate([
+    { opacity: 0 },
+    { opacity: 0.95, offset: 0.2 },
+    { opacity: 0.1 }
+  ], { duration: 900, easing: 'ease-out', fill: 'forwards' });
+
+  arrow.animate([
+    { transform: 'translate(-50%, -50%) scale(0.85)', opacity: 0 },
+    { transform: 'translate(-50%, -50%) scale(1)', opacity: 1, offset: 0.18 },
+    { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(1.02)`, opacity: 1, offset: 0.85 },
+    { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.96)`, opacity: 0 }
+  ], {
+    duration: 980,
+    easing: 'cubic-bezier(.2,.9,.2,1)',
+    fill: 'forwards'
+  });
+
+  setTimeout(() => trail.remove(), 1100);
+  setTimeout(() => arrow.remove(), 1150);
+}
+
+function updateDrawFx(){
+  const s = viewState();
+  const pending = s?.pendingDraw;
+  const active = pending?.activeSeat;
+  const target = pending?.targetSeat;
+  if(typeof active !== 'number' || typeof target !== 'number'){
+    lastDrawFxKey = null;
+    return;
   }
-  drawLinkFx.style.left = `${x1}px`;
-  drawLinkFx.style.top = `${y1}px`;
-  drawLinkFx.style.width = `${len}px`;
-  drawLinkFx.style.transform = `rotate(${angle}deg)`;
-  drawLinkFx.style.setProperty('--travel', `${Math.max(0, len - 18)}px`);
+
+  const key = `${pending?.createdAt ?? 'na'}:${target}->${active}`;
+  if(key === lastDrawFxKey) return;
+  lastDrawFxKey = key;
+  animateTurnArrow(target, active);
 }
 
 function renderTopLabels(){
@@ -1137,7 +1157,7 @@ function render(){
   const s = viewState();
   if(!s) return;
   renderSeats();
-  updateDrawLinkFx();
+  updateDrawFx();
   renderTopLabels();
   renderPickOverlay();
   if(mode === 'player' && you) renderHand();
