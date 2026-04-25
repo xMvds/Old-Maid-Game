@@ -791,7 +791,7 @@ io.on("connection", (socket) => {
 
     // Browser identity flow:
     // one browser can occupy only one seat in this game (prevents rejoin with new username in same browser).
-    if(browserKey && room.started){
+    if(browserKey){
       const sameBrowser = room.players.find(p => p.browserKey && p.browserKey === browserKey);
       if(sameBrowser){
         sameBrowser.socketId = socket.id;
