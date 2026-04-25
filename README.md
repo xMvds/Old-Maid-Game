@@ -65,3 +65,22 @@ Belangrijk: de server luistert op `process.env.PORT` (Render zet dit automatisch
 - Open: `/room.html` (player) and `/host` (dev)
 
 This project pins Node to LTS via `engines` and `.node-version`.
+
+
+## Deployen op Render (Web Service)
+
+> Kies **New Web Service (Node)**, niet Static Site.
+
+**Invullen op Render (Create Web Service):**
+- **Root Directory:** *(leeg)*
+- **Build Command:** `bash render-build.sh`
+- **Start Command:** `node server.js`
+- **Instance Type:** Free (of hoger)
+
+**URL's na deploy:**
+- Player: `/room.html`
+- Host/Dev: `/host`
+
+### Waarom niet npm ci?
+Soms crasht npm op Render met `Exit handler never called!`. Deze build gebruikt daarom **Yarn via Corepack** in `render-build.sh`.
+
