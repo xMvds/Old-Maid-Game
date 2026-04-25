@@ -148,8 +148,8 @@ function bindHostLongPress(el){
 bindHostLongPress($("joinTitle"));
 bindHostLongPress($("gameBadge"));
 
-// Keep the name field empty by default; blank = auto "Speler N" server-side.
-nameInput.value = "";
+// Prefill with last used name so players can quickly rejoin, but still confirm manually.
+nameInput.value = localStorage.getItem("om_last_name") || "";
 
 function getName(){
   return (nameInput.value || "").trim().slice(0,18);
@@ -337,24 +337,21 @@ socket.on("publicState", (state) => {
   if(!joinDecided){
     joinDecided = true;
 
-    const key = sessionStorage.getItem(`om_reconnect_${roomId}`) || "";
-    const canReconnect = !!key;
-    if(canReconnect){
-      join(key);
-    }else if(!state?.started){
+    // Always ask for a manual join so the player can enter/adjust their name.
+    sessionStorage.removeItem(`om_reconnect_${roomId}`);
+    if(!state?.started){
       // Lobby: refresh behaves like logout (force name input again)
-      sessionStorage.removeItem(`om_reconnect_${roomId}`);
       joinOverlay.style.display = "flex";
       showJoinError("");
       mode = 'player';
       showSpectatorBanner(false);
-      nameInput.value = "";
+      nameInput.value = localStorage.getItem("om_last_name") || "";
       focusNameInput();
     }else{
       // Allow spectate (no seat) while the game is running.
       joinOverlay.style.display = "flex";
       showJoinError("Spel is al gestart. Je kunt wel meekijken (spectate). Vul evt. je naam in en klik Join.");
-      nameInput.value = "";
+      nameInput.value = localStorage.getItem("om_last_name") || "";
       focusNameInput();
     }
   }
