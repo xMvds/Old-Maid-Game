@@ -5,6 +5,20 @@ const APP_VERSION = "V2.0";
 function $(id){ return document.getElementById(id); }
 
 const roomId = "TABLE";
+const BROWSER_KEY_STORAGE = "om_browser_key";
+
+function getBrowserKey(){
+  let k = localStorage.getItem(BROWSER_KEY_STORAGE) || "";
+  if(k) return k;
+  try{
+    k = (crypto?.randomUUID?.() || "");
+  }catch(_){ k = ""; }
+  if(!k){
+    k = `b_${Math.random().toString(36).slice(2)}_${Date.now().toString(36)}`;
+  }
+  localStorage.setItem(BROWSER_KEY_STORAGE, k);
+  return k;
+}
 
 // If you duplicate a tab, some browsers copy sessionStorage.
 // We only auto-reconnect on real reloads; new tabs always join as a new player.
@@ -69,6 +83,7 @@ let raisedIndex = null;
 let selectedPickIndex = null;
 let lastPickCreatedAt = null;
 let lastPickAnimatedAt = null;
+let drawLinkFx = null;
 
 // --- UI helpers
 function toast(text, ms=1200){
@@ -106,6 +121,33 @@ helpOverlay.addEventListener("click", (e) => {
   if(e.target === helpOverlay) closeHelp();
 });
 
+function bindHostLongPress(el){
+  if(!el) return;
+  let timer = null;
+  const clear = () => {
+    if(timer){
+      clearTimeout(timer);
+      timer = null;
+    }
+  };
+  el.addEventListener('pointerdown', (e) => {
+    // Mobile shortcut (touch/pen). Keep desktop D-key flow unchanged.
+    if(e.pointerType === 'mouse') return;
+    clear();
+    timer = setTimeout(() => {
+      timer = null;
+      window.open('/host', '_blank');
+      toast('Host geopend', 1000);
+    }, 700);
+  });
+  el.addEventListener('pointerup', clear);
+  el.addEventListener('pointercancel', clear);
+  el.addEventListener('pointerleave', clear);
+}
+
+bindHostLongPress($("joinTitle"));
+bindHostLongPress($("gameBadge"));
+
 // Keep the name field empty by default; blank = auto "Speler N" server-side.
 nameInput.value = "";
 
@@ -123,7 +165,7 @@ function join(reconnectKey){
     localStorage.setItem("om_name", name);
   }
 
-  socket.emit("joinTable", { name, reconnectKey }, (res) => {
+  socket.emit("joinTable", { name, reconnectKey, browserKey: getBrowserKey() }, (res) => {
     if(!res?.ok){
       if(reconnectKey){
         sessionStorage.removeItem(`om_reconnect_${roomId}`);
@@ -296,9 +338,10 @@ socket.on("publicState", (state) => {
     joinDecided = true;
 
     const key = sessionStorage.getItem(`om_reconnect_${roomId}`) || "";
-    const canReconnect = !!(state?.started) && (NAV_TYPE === "reload") && !!key;
-
-    if(!state?.started){
+    const canReconnect = !!key;
+    if(canReconnect){
+      join(key);
+    }else if(!state?.started){
       // Lobby: refresh behaves like logout (force name input again)
       sessionStorage.removeItem(`om_reconnect_${roomId}`);
       joinOverlay.style.display = "flex";
@@ -308,26 +351,19 @@ socket.on("publicState", (state) => {
       nameInput.value = "";
       focusNameInput();
     }else{
-      if(canReconnect){
-        join(key);
-      }else{
-        // Allow spectate (no seat) while the game is running.
-        joinOverlay.style.display = "flex";
-        showJoinError("Spel is al gestart. Je kunt wel meekijken (spectate). Vul evt. je naam in en klik Join.");
-        nameInput.value = "";
-        focusNameInput();
-      }
+      // Allow spectate (no seat) while the game is running.
+      joinOverlay.style.display = "flex";
+      showJoinError("Spel is al gestart. Je kunt wel meekijken (spectate). Vul evt. je naam in en klik Join.");
+      nameInput.value = "";
+      focusNameInput();
     }
   }
 
-  // If you are spectating and the game returns to lobby, show join again.
+  // If you are spectating and the game returns to lobby, keep watching the lobby.
   if(mode === 'spectator' && !state?.started){
-    showSpectatorBanner(false);
-    joinOverlay.style.display = 'flex';
-    showJoinError('Spel is afgelopen. Join om mee te doen.');
-    mode = 'player';
-    nameInput.value = "";
-    focusNameInput();
+    joinOverlay.style.display = 'none';
+    showJoinError('');
+    showSpectatorBanner(true);
   }
 });
 
@@ -401,6 +437,11 @@ function cardFace(card){
 function showSpectatorBanner(on){
   const b = $("spectatorBanner");
   if(!b) return;
+  if(on){
+    b.textContent = lastPublic?.started
+      ? '👀 Spel is al bezig — je kijkt mee (spectator). Wacht tot het spel voorbij is om mee te doen.'
+      : '👀 Je kijkt mee in de lobby. Je kunt blijven kijken zonder opnieuw je naam in te voeren.';
+  }
   b.hidden = !on;
   // Hide player-only UI when spectating
   const handArea = $("handArea");
@@ -652,19 +693,6 @@ function renderSeats(){
     const nameEl = document.createElement('div');
     nameEl.className = 'seat-name';
 
-    const tagsWrap = document.createElement('div');
-    tagsWrap.className = 'seat-tags';
-
-    const tagTurn = document.createElement('div');
-    tagTurn.className = 'seat-tag seat-tag-turn';
-    tagTurn.textContent = 'AAN DE BEURT';
-    tagsWrap.appendChild(tagTurn);
-
-    const tagTarget = document.createElement('div');
-    tagTarget.className = 'seat-tag seat-tag-target';
-    tagTarget.textContent = 'WORDT GETROKKEN';
-    tagsWrap.appendChild(tagTarget);
-
     const meta = document.createElement('div');
     meta.className = 'seat-meta';
 
@@ -681,7 +709,6 @@ function renderSeats(){
     cards.className = 'seat-cards';
 
     seatEl.appendChild(nameEl);
-    seatEl.appendChild(tagsWrap);
     seatEl.appendChild(meta);
     seatEl.appendChild(cards);
     return seatEl;
@@ -738,16 +765,10 @@ function renderSeats(){
     }
 
     // Classes (smooth transitions in CSS)
-    seatEl.classList.toggle('turn', isGame && seat === activeSeat);
-    seatEl.classList.toggle('target', isGame && seat === targetSeat);
+    seatEl.classList.remove('turn', 'target');
+    seatEl.classList.toggle('draw-active', isGame && seat === activeSeat);
     seatEl.classList.toggle('you', mode === 'player' && you?.seat === seat);
     seatEl.classList.toggle('winner', s?.winnerSeat === seat);
-
-    // Tags (fade in/out)
-    const turnTag = seatEl.querySelector('.seat-tag-turn');
-    const targetTag = seatEl.querySelector('.seat-tag-target');
-    if(turnTag) turnTag.classList.toggle('show', isGame && seat === activeSeat);
-    if(targetTag) targetTag.classList.toggle('show', isGame && seat === targetSeat);
 
     // Position on arc (only in opponentsRow)
     if(container === opponentsRow){
@@ -775,6 +796,59 @@ function renderSeats(){
   }
 }
 
+function clearDrawLinkFx(){
+  if(!drawLinkFx) return;
+  drawLinkFx.remove();
+  drawLinkFx = null;
+}
+
+function updateDrawLinkFx(){
+  const s = viewState();
+  const pending = s?.pendingDraw;
+  const active = pending?.activeSeat;
+  const target = pending?.targetSeat;
+  if(typeof active !== 'number' || typeof target !== 'number'){
+    clearDrawLinkFx();
+    return;
+  }
+  if(!fxLayer) return;
+  const fromEl = seatElement(active);
+  const toEl = seatElement(target);
+  const table = $("table");
+  if(!fromEl || !toEl || !table){
+    clearDrawLinkFx();
+    return;
+  }
+
+  const tr = table.getBoundingClientRect();
+  const fr = fromEl.getBoundingClientRect();
+  const rr = toEl.getBoundingClientRect();
+  const x1 = fr.left + fr.width / 2 - tr.left;
+  const y1 = fr.top + fr.height / 2 - tr.top;
+  const x2 = rr.left + rr.width / 2 - tr.left;
+  const y2 = rr.top + rr.height / 2 - tr.top;
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len = Math.hypot(dx, dy);
+  if(len < 14){
+    clearDrawLinkFx();
+    return;
+  }
+  const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+  if(!drawLinkFx){
+    drawLinkFx = document.createElement('div');
+    drawLinkFx.className = 'fx-draw-link';
+    drawLinkFx.innerHTML = '<div class="fx-draw-line"></div><div class="fx-draw-arrow"></div>';
+    fxLayer.appendChild(drawLinkFx);
+  }
+  drawLinkFx.style.left = `${x1}px`;
+  drawLinkFx.style.top = `${y1}px`;
+  drawLinkFx.style.width = `${len}px`;
+  drawLinkFx.style.transform = `rotate(${angle}deg)`;
+  drawLinkFx.style.setProperty('--travel', `${Math.max(0, len - 18)}px`);
+}
+
 function renderTopLabels(){
   const s = viewState();
   if(!s) return;
@@ -788,24 +862,15 @@ function renderTopLabels(){
   else if(phase === 'gameover') stateBadge.textContent = 'Einde';
   else stateBadge.textContent = 'Spel';
 
-  const pending = s?.pendingDraw;
-  const activeSeat = pending?.activeSeat;
-  const targetSeat = pending?.targetSeat;
-  const active = typeof activeSeat === 'number' ? players.find(p=>p.seat===activeSeat) : null;
-  const target = typeof targetSeat === 'number' ? players.find(p=>p.seat===targetSeat) : null;
-
   if(mode === 'spectator' && started && phase !== 'gameover'){
-    turnLine.textContent = `👀 Spel bezig • je kijkt mee (spectator).`;
+    turnLine.textContent = `👀 Spel bezig • je kijkt mee.`;
   } else if(!started){
     turnLine.textContent = `Wachten op host start… (${players.length}/${max})`;
   } else if(phase === 'gameover'){
     const w = players.find(p=>p.seat===s.winnerSeat);
     turnLine.textContent = w ? `🏁 WIN: ${w.name}` : '🏁 Einde';
   } else {
-    const youTurn = (mode === 'player') && you && (you.seat === activeSeat) && !you.eliminated;
-    turnLine.textContent = youTurn
-      ? `✅ Jij bent aan de beurt → pak van ${target?.name || '—'}`
-      : `⏳ ${active?.name || '—'} → pakt van ${target?.name || '—'}`;
+    turnLine.textContent = 'Speelronde bezig…';
   }
 
   // discard pile UI removed
@@ -1051,6 +1116,14 @@ function renderHand(){
 
   const n = hand.length;
   const mid = (n - 1) / 2;
+  const compact = window.matchMedia('(max-width: 520px)').matches;
+  const cardW = compact ? 112 : 146;
+  const handW = handEl.clientWidth || handEl.parentElement?.clientWidth || Math.floor(window.innerWidth * 0.92);
+  const maxSpacing = cardW + 8;
+  const minSpacing = 28;
+  const spacing = (n > 1)
+    ? Math.max(minSpacing, Math.min(maxSpacing, (handW - cardW) / (n - 1)))
+    : 0;
 
   const defend = lastState?.defend;
   const canNudge = !!(defend && !nudgeSent);
@@ -1063,9 +1136,9 @@ function renderHand(){
     btn.className = 'handCard';
     btn.type = 'button';
 
-    const x = (i - mid) * 70;
-    const rot = (i - mid) * 4.0;
-    const y = Math.abs(i - mid) * -1.2;
+    const x = (i - mid) * spacing;
+    const rot = 0;
+    const y = 0;
     btn.style.setProperty('--x', `${x}px`);
     btn.style.setProperty('--rot', `${rot}deg`);
     btn.style.setProperty('--y', `${y}px`);
@@ -1102,7 +1175,9 @@ function render(){
   const s = viewState();
   if(!s) return;
   renderSeats();
+  updateDrawLinkFx();
   renderTopLabels();
   renderPickOverlay();
   if(mode === 'player' && you) renderHand();
+  document.body.classList.toggle('isEliminated', mode === 'player' && !!you?.eliminated);
 }
