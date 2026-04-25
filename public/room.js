@@ -5,10 +5,10 @@ const APP_VERSION = "V2.0";
 function $(id){ return document.getElementById(id); }
 
 const roomId = "TABLE";
-const BROWSER_KEY_STORAGE = "om_browser_key";
+const TAB_KEY_STORAGE = "om_tab_key";
 
-function getBrowserKey(){
-  let k = localStorage.getItem(BROWSER_KEY_STORAGE) || "";
+function getTabKey(){
+  let k = sessionStorage.getItem(TAB_KEY_STORAGE) || "";
   if(k) return k;
   try{
     k = (crypto?.randomUUID?.() || "");
@@ -16,7 +16,7 @@ function getBrowserKey(){
   if(!k){
     k = `b_${Math.random().toString(36).slice(2)}_${Date.now().toString(36)}`;
   }
-  localStorage.setItem(BROWSER_KEY_STORAGE, k);
+  sessionStorage.setItem(TAB_KEY_STORAGE, k);
   return k;
 }
 
@@ -84,6 +84,7 @@ let selectedPickIndex = null;
 let lastPickCreatedAt = null;
 let lastPickAnimatedAt = null;
 let lastDrawFxKey = null;
+let persistentDrawFx = null;
 
 // --- UI helpers
 function toast(text, ms=1200){
@@ -148,8 +149,8 @@ function bindHostLongPress(el){
 bindHostLongPress($("joinTitle"));
 bindHostLongPress($("gameBadge"));
 
-// Keep the name field empty by default; blank = auto "Speler N" server-side.
-nameInput.value = "";
+// Prefill with last used name so players can quickly rejoin, but still confirm manually.
+nameInput.value = localStorage.getItem("om_last_name") || "";
 
 function getName(){
   return (nameInput.value || "").trim().slice(0,18);
@@ -165,7 +166,7 @@ function join(reconnectKey){
     localStorage.setItem("om_name", name);
   }
 
-  socket.emit("joinTable", { name, reconnectKey, browserKey: getBrowserKey() }, (res) => {
+  socket.emit("joinTable", { name, reconnectKey, browserKey: getTabKey() }, (res) => {
     if(!res?.ok){
       if(reconnectKey){
         sessionStorage.removeItem(`om_reconnect_${roomId}`);
@@ -337,24 +338,21 @@ socket.on("publicState", (state) => {
   if(!joinDecided){
     joinDecided = true;
 
-    const key = sessionStorage.getItem(`om_reconnect_${roomId}`) || "";
-    const canReconnect = !!key;
-    if(canReconnect){
-      join(key);
-    }else if(!state?.started){
+    // Always ask for a manual join so the player can enter/adjust their name.
+    sessionStorage.removeItem(`om_reconnect_${roomId}`);
+    if(!state?.started){
       // Lobby: refresh behaves like logout (force name input again)
-      sessionStorage.removeItem(`om_reconnect_${roomId}`);
       joinOverlay.style.display = "flex";
       showJoinError("");
       mode = 'player';
       showSpectatorBanner(false);
-      nameInput.value = "";
+      nameInput.value = localStorage.getItem("om_last_name") || "";
       focusNameInput();
     }else{
       // Allow spectate (no seat) while the game is running.
       joinOverlay.style.display = "flex";
       showJoinError("Spel is al gestart. Je kunt wel meekijken (spectate). Vul evt. je naam in en klik Join.");
-      nameInput.value = "";
+      nameInput.value = localStorage.getItem("om_last_name") || "";
       focusNameInput();
     }
   }
@@ -853,15 +851,81 @@ function animateTurnArrow(fromSeat, toSeat){
   setTimeout(() => arrow.remove(), 1150);
 }
 
+function clearPersistentDrawFx(){
+  if(!persistentDrawFx) return;
+  persistentDrawFx.wrap?.remove();
+  persistentDrawFx = null;
+}
+
+function ensurePersistentDrawFx(){
+  if(persistentDrawFx?.wrap?.isConnected) return persistentDrawFx;
+  if(!fxLayer) return null;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'fx-turn-path';
+
+  const line = document.createElement('div');
+  line.className = 'fx-turn-path-line';
+
+  const arrow = document.createElement('div');
+  arrow.className = 'fx-turn-path-arrow';
+
+  wrap.appendChild(line);
+  wrap.appendChild(arrow);
+  fxLayer.appendChild(wrap);
+  persistentDrawFx = { wrap, line, arrow };
+  return persistentDrawFx;
+}
+
+function renderPersistentDrawFx(fromSeat, toSeat){
+  const table = $("table");
+  const fromEl = seatElement(fromSeat);
+  const toEl = seatElement(toSeat);
+  if(!table || !fromEl || !toEl){
+    clearPersistentDrawFx();
+    return;
+  }
+
+  const tr = table.getBoundingClientRect();
+  const fr = fromEl.getBoundingClientRect();
+  const rr = toEl.getBoundingClientRect();
+
+  const x1 = fr.left + fr.width / 2 - tr.left;
+  const y1 = fr.top + fr.height / 2 - tr.top;
+  const x2 = rr.left + rr.width / 2 - tr.left;
+  const y2 = rr.top + rr.height / 2 - tr.top;
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len = Math.hypot(dx, dy);
+  if(len < 10){
+    clearPersistentDrawFx();
+    return;
+  }
+
+  const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+  const fx = ensurePersistentDrawFx();
+  if(!fx) return;
+
+  fx.wrap.style.left = `${x1}px`;
+  fx.wrap.style.top = `${y1}px`;
+  fx.wrap.style.width = `${len}px`;
+  fx.wrap.style.transform = `rotate(${angle}deg)`;
+  fx.wrap.style.setProperty('--travel', `${len}px`);
+}
+
 function updateDrawFx(){
   const s = viewState();
   const pending = s?.pendingDraw;
   const active = pending?.activeSeat;
   const target = pending?.targetSeat;
   if(typeof active !== 'number' || typeof target !== 'number'){
+    clearPersistentDrawFx();
     lastDrawFxKey = null;
     return;
   }
+
+  // Keep a visible, moving indicator while a draw is pending.
+  renderPersistentDrawFx(target, active);
 
   const key = `${pending?.createdAt ?? 'na'}:${target}->${active}`;
   if(key === lastDrawFxKey) return;
