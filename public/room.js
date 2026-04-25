@@ -844,24 +844,15 @@ function renderTopLabels(){
   else if(phase === 'gameover') stateBadge.textContent = 'Einde';
   else stateBadge.textContent = 'Spel';
 
-  const pending = s?.pendingDraw;
-  const activeSeat = pending?.activeSeat;
-  const targetSeat = pending?.targetSeat;
-  const active = typeof activeSeat === 'number' ? players.find(p=>p.seat===activeSeat) : null;
-  const target = typeof targetSeat === 'number' ? players.find(p=>p.seat===targetSeat) : null;
-
   if(mode === 'spectator' && started && phase !== 'gameover'){
-    turnLine.textContent = `👀 Spel bezig • je kijkt mee (spectator).`;
+    turnLine.textContent = `👀 Spel bezig • je kijkt mee.`;
   } else if(!started){
     turnLine.textContent = `Wachten op host start… (${players.length}/${max})`;
   } else if(phase === 'gameover'){
     const w = players.find(p=>p.seat===s.winnerSeat);
     turnLine.textContent = w ? `🏁 WIN: ${w.name}` : '🏁 Einde';
   } else {
-    const youTurn = (mode === 'player') && you && (you.seat === activeSeat) && !you.eliminated;
-    turnLine.textContent = youTurn
-      ? `✅ Jij bent aan de beurt → pak van ${target?.name || '—'}`
-      : `⏳ ${active?.name || '—'} → pakt van ${target?.name || '—'}`;
+    turnLine.textContent = 'Speelronde bezig…';
   }
 
   // discard pile UI removed

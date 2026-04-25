@@ -100,85 +100,45 @@ function shuffleInPlace(arr){
 }
 
 /**
- * Build a balanced start deck of exactly `totalCards` cards.
- * - Always includes exactly 1 Joker.
- * - Tries to make every other rank appear as pairs.
- * - If `totalCards - 1` is odd, uses one 3-of-a-kind rank (pair + 1 extra) to keep the
- *   number of odd-count ranks minimal.
+ * Build a start deck with EXACTLY 1 Joker and only pair-able non-joker cards.
+ * Non-joker count is always even (0,2,4,...,52), so every non-joker can form duo setjes by rank.
+ * Returns <= totalCards when parity/cap requires shrinking.
  */
-function buildBalancedStartDeck(totalCards){
-  const total = Math.max(0, Number(totalCards) || 0);
-  if(total <= 0) return [];
-  if(total === 1) return [{ suit: "JOKER", rank: null }];
+function buildPairOnlyStartDeck(totalCards){
+  const requested = Math.max(0, Number(totalCards) || 0);
+  if(requested <= 0) return [];
 
-  const nonJoker = Math.max(0, total - 1);
-  if(nonJoker > 52){
-    // Should never happen due to handSize clamping, but guard anyway.
-    return shuffle(makeDeck()).slice(0, total);
-  }
+  // 1 Joker + even amount of non-joker cards.
+  let nonJoker = Math.max(0, Math.min(52, requested - 1));
+  if(nonJoker % 2 === 1) nonJoker -= 1;
 
   const byRank = new Map();
-  for(const r of RANKS){
-    // Available suits for this rank.
-    byRank.set(r, shuffle([...SUITS]));
-  }
+  for(const r of RANKS) byRank.set(r, shuffle([...SUITS]));
 
-  function pickRank(minNeeded){
-    const eligible = RANKS.filter(r => (byRank.get(r) || []).length >= minNeeded);
+  function pickRankWithPair(){
+    const eligible = RANKS.filter(r => (byRank.get(r) || []).length >= 2);
     if(!eligible.length) return null;
     return eligible[Math.floor(Math.random() * eligible.length)];
   }
 
-  function take(rank, count){
+  function takePair(rank){
     const suits = byRank.get(rank) || [];
-    const out = [];
-    for(let i=0;i<count;i++){
-      const suit = suits.pop();
-      if(!suit) break;
-      out.push({ suit, rank });
-    }
+    if(suits.length < 2) return [];
+    const a = suits.pop();
+    const b = suits.pop();
     byRank.set(rank, suits);
-    return out;
+    return [{ suit: a, rank }, { suit: b, rank }];
   }
 
   const out = [{ suit: "JOKER", rank: null }];
-
-  // Handle parity first.
-  if(nonJoker % 2 === 1){
-    if(nonJoker >= 3){
-      const r = pickRank(3) ?? pickRank(1);
-      if(r != null) out.push(...take(r, 3));
-    } else {
-      const r = pickRank(1);
-      if(r != null) out.push(...take(r, 1));
-    }
-  }
-
-  const remaining = total - out.length;
-  const pairCount = Math.floor(remaining / 2);
+  const pairCount = Math.floor(nonJoker / 2);
   for(let i=0;i<pairCount;i++){
-    const r = pickRank(2) ?? pickRank(1);
+    const r = pickRankWithPair();
     if(r == null) break;
-    const got = take(r, 2);
-    if(got.length < 2){
-      // Fallback: if a rank runs out unexpectedly, stop.
-      out.push(...got);
-      break;
-    }
-    out.push(...got);
+    out.push(...takePair(r));
   }
 
-  // If still short (shouldn't happen), top up with random non-joker cards.
-  if(out.length < total){
-    const full = makeDeck().filter(c => c.suit !== 'JOKER');
-    shuffleInPlace(full);
-    while(out.length < total && full.length){
-      out.push(full.pop());
-    }
-  }
-
-  // If we somehow overshot, trim.
-  return out.slice(0, total);
+  return out;
 }
 
 function normalizeName(name){
@@ -478,8 +438,9 @@ function deal(room){
       }
     }
   } else {
-    // Everyone gets N cards (equal for all players). Build a "balanced" start deck
-    // to avoid many singletons (unmatchable endgames) when only a subset of the deck is in play.
+    // Everyone gets about N cards. We enforce:
+    // - exactly 1 Joker
+    // - all other cards are pair-able by rank (duo setjes)
     const requested = Math.max(1, Math.min(13, Number(room.settings.startingHandSize) || 7));
     const pc = Math.max(1, room.players.length);
     const maxPossible = Math.max(1, Math.floor(deck.length / pc));
@@ -489,22 +450,18 @@ function deal(room){
       addLog(room, `⚠️ Start handsize ${requested} kan niet met ${pc} speler(s). Gebruik ${handSize}.`);
     }
 
-    const totalInPlay = pc * handSize;
-
-    // With a single Joker, a perfect "only pairs + Joker" deck is only possible when totalInPlay is odd.
-    // If totalInPlay is even (common with even player counts), we use one 3-of-a-kind rank so the
-    // number of unmatchable ranks stays minimal (at most 1).
-    const playDeck = buildBalancedStartDeck(totalInPlay);
+    const targetTotal = pc * handSize;
+    const playDeck = buildPairOnlyStartDeck(targetTotal);
     shuffleInPlace(playDeck);
 
-    const nonJoker = Math.max(0, totalInPlay - 1);
-    if(nonJoker % 2 === 1){
-      addLog(room, `ℹ️ Startdeck: ${totalInPlay} kaarten in play (incl. Joker). Pariteit → 1 rank is 3-of-a-kind om singletons te beperken.`);
-    }else{
-      addLog(room, `ℹ️ Startdeck: ${totalInPlay} kaarten in play (incl. Joker) met zoveel mogelijk pairs.`);
+    if(playDeck.length !== targetTotal){
+      addLog(room, `ℹ️ Startdeck aangepast naar ${playDeck.length} kaarten (incl. Joker) zodat alle niet-Joker kaarten in duo setjes blijven.`);
+    } else {
+      addLog(room, `ℹ️ Startdeck: ${playDeck.length} kaarten (incl. Joker); alle niet-Joker kaarten zijn duo setjes op rank.`);
     }
 
-    for(let r=0;r<handSize;r++){
+    // Round-robin deal; by parity, some players may get 1 kaart meer/minder.
+    while(playDeck.length){
       for(const p of room.players){
         if(playDeck.length) p.hand.push(playDeck.pop());
       }
@@ -512,7 +469,6 @@ function deal(room){
   }
 
   // IMPORTANT: do not auto-discard pairs on initial deal.
-  // This keeps the starting hand size equal for every player.
   // Pairs are discarded only after a draw (active player).
 
   // Random first alive

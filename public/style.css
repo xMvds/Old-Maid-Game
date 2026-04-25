@@ -359,9 +359,10 @@ a{color:inherit}
 .seat-name{font-weight:700; overflow:hidden; white-space:nowrap; text-overflow:ellipsis}
 .seat-meta{display:flex; justify-content:center; gap:10px; margin-top:6px; align-items:center}
 .seat-icons{display:inline-flex; gap:6px}
-.seat.turn{
-  border-color: rgba(255,255,255,0.22);
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.10), 0 0 30px rgba(255,255,255,0.10);
+.seat.draw-active{
+  border-color: rgba(255,255,255,0.48);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.18), 0 0 26px rgba(255,255,255,0.20);
+  animation: activeSeatPulse 1200ms ease-in-out infinite;
 }
 .seat.draw-active{
   border-color: rgba(255,120,120,0.62);
@@ -373,10 +374,17 @@ a{color:inherit}
   box-shadow: 0 0 0 1px rgba(120,255,170,0.14), 0 0 40px rgba(120,255,170,0.12);
 }
 
-/* Target + turn glow changes should feel like fades */
-.seat.target,
-.seat.turn,
 .seat.winner{ transition: border-color .45s ease, box-shadow .45s ease; }
+@keyframes activeSeatPulse{
+  0%, 100%{
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.16), 0 0 16px rgba(255,255,255,0.14);
+    border-color: rgba(255,255,255,0.34);
+  }
+  50%{
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.24), 0 0 34px rgba(255,255,255,0.28);
+    border-color: rgba(255,255,255,0.58);
+  }
+}
 
 .seat-stack{display:flex; justify-content:center; margin-top:8px;}
 .seat-stack .mini-card{width:18px;height:24px;margin-left:-8px}
@@ -724,11 +732,6 @@ body.picking .table-3d{ filter: none; }
 
 @media (max-width: 520px){
   .stageCards{ height: min(320px, 44vh); }
-}
-
-.seat.target{
-  border-color: rgba(255,210,120,0.38);
-  box-shadow: 0 0 0 1px rgba(255,210,120,0.14), 0 0 32px rgba(255,210,120,0.10);
 }
 
 /* Hand: bottom center, fanned */
