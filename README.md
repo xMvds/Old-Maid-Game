@@ -16,6 +16,20 @@ Single-table (1 lobby) multiplayer prototype.
    - Open meerdere tabbladen → elk tabblad is een nieuwe speler.
    - Vul per tab een **unieke naam** in (de server maakt automatisch `"Naam 2"`, `"Naam 3"` als je dubbel zit).
 
+
+
+### Snel starten op Windows (dubbelklik)
+In de hoofdmap staat nu een duidelijk startbestand:
+- `START-LOKAAL-OLD-MAID.bat`
+
+Wat dit bestand doet:
+- controleert of Node.js aanwezig is
+- installeert dependencies als `node_modules` nog ontbreekt
+- start de server
+- opent automatisch deze URL's in je browser:
+  - Player: `http://localhost:3000/room.html`
+  - Host: `http://localhost:3000/host`
+
 ## Host (dev)
 Open in een aparte tab:
 - `http://localhost:3000/host`
